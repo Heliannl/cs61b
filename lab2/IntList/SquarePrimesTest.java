@@ -22,9 +22,9 @@ public class SquarePrimesTest {
 
     @Test
     public void testSquarePrimesHard() {
-        IntList lst = IntList.of(7);
+        IntList lst = IntList.of(7, 3);
         boolean changed = IntListExercises.squarePrimes(lst);
-        assertEquals("49", lst.toString());
+        assertEquals("49 -> 9", lst.toString());
         assertTrue(changed);
     }
 }

@@ -76,7 +76,11 @@ public class IntListExercises {
         if (currElemIsPrime) {
             lst.first *= lst.first;
         }
-
-        return currElemIsPrime || squarePrimes(lst.rest);
+        /** return currElemIsPrime || squarePrimes(lst.rest);
+         *  when there is another prime after the first prime, it will return true
+         *  without dealing with squarePrimes(lst.rest)
+         *  so the next prime will not be squared.
+         */
+        return squarePrimes(lst.rest) || currElemIsPrime;
     }
 }
