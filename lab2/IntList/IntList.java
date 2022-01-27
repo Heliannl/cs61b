@@ -46,6 +46,75 @@ public class IntList {
         }
     }
 
+    /** Modifies the list so that all of its elements are squared. */
+    public static void dSquareList(IntList L){
+        while (L != null) {
+            L.first = L.first * L.first;
+            L = L.rest;
+        }
+    }
+
+    /** Returns a version of the list with all elements squared, using iteration.
+     * This List is not modified. */
+    public static IntList squareListIterative(IntList L){
+        if(L == null){
+            return null;
+        }
+        IntList p = new IntList(L.first*L.first, null);
+        IntList ptr = p;
+        L = L.rest;
+        while (L != null) {
+            ptr.rest = new IntList(L.first*L.first, null);
+            ptr = ptr.rest;
+            L = L.rest;
+        }
+        return p;
+    }
+
+    /** Returns a version of the list with all elements squared, using recursion.
+     * This List is not modified.*/
+    public static IntList squareListRecursion(IntList L){
+        if(L == null){
+            return null;
+        }
+        return new IntList(L.first*L.first, squareListRecursion(L.rest));
+    }
+
+    /** Returns a list consisting of all elements of A, followed by all elements of B.
+     *  May modify A, to be completed by you. Don't use new. */
+    public static IntList dcatenate(IntList A, IntList B){
+        if(A == null){
+            return B;
+        }
+        while(A.rest != null){
+            A = A.rest;
+        }
+        A.rest = B;
+        return A;
+    }
+
+    /** Return a list consisting all elements of A, followed by all elements of B.
+     *  May not modify A, to be completed by you. Use new. */
+    public static IntList catenate(IntList A, IntList B){
+        if(A == null){
+           return B;
+        }
+        IntList p = new IntList(A.first, null);
+        IntList ptr = p;
+        A = A.rest;
+        while(A != null){
+            ptr.rest = new IntList(A.first, null);
+            ptr = ptr.rest;
+            A = A.rest;
+        }
+        while(B != null){
+            ptr.rest = new IntList(B.first, null);
+            ptr = ptr.rest;
+            B = B.rest;
+        }
+        return p;
+    }
+
     /**
      * Method to create an IntList from an argument list.
      * You don't have to understand this code. We have it here
