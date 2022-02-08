@@ -11,9 +11,9 @@ public class GuitarHero {
         /* create 37 guitar strings, for concert q2we... */
         String keyboard = "q2we4r5ty7u8i9op-[=zxdcfvgbnjmk,.;/' ";
         GuitarString[] strings = new GuitarString[keyboard.length()];
-        double[] concerts =new double[keyboard.length()];
-        for(int i=0; i< keyboard.length(); i++){
-            concerts[i] = 440.0 * Math.pow(2, (i-24.0)/12.0);
+        double[] concerts = new double[keyboard.length()];
+        for (int i = 0; i < keyboard.length(); i++) {
+            concerts[i] = 440.0 * Math.pow(2, (i - 24.0) / 12.0);
             strings[i] = new GuitarString(concerts[i]);
         }
 
@@ -23,7 +23,7 @@ public class GuitarHero {
             if (StdDraw.hasNextKeyTyped()) {
                 char key = StdDraw.nextKeyTyped();
                 int keyIndex = keyboard.indexOf(key);
-                if(keyIndex==-1){
+                if (keyIndex == -1) {
                     continue;
                 }
                 strings[keyIndex].pluck();

@@ -10,11 +10,11 @@ public class LinkedListDeque<T> implements Deque<T> {
      */
 
     private static class TNode<T> {
-        public TNode prev;
-        public T item;
-        public TNode next;
+        private TNode prev;
+        private T item;
+        private TNode next;
 
-        public TNode(TNode p, T i, TNode n) {
+        TNode(TNode p, T i, TNode n) {
             this.prev = p;
             this.item = i;
             this.next = n;
@@ -169,11 +169,11 @@ public class LinkedListDeque<T> implements Deque<T> {
     /**
      * Same as get, but uses recursion.
      */
-    private T getRecursiveHelp(int index, TNode currNode){
-        if(index==0){
-            return (T)currNode.item;
+    private T getRecursiveHelp(int index, TNode currNode) {
+        if (index == 0) {
+            return (T) currNode.item;
         }
-        return getRecursiveHelp(index-1, currNode.next);
+        return getRecursiveHelp(index - 1, currNode.next);
     }
 
     public T getRecursive(int index) {
