@@ -125,4 +125,21 @@ public class ArrayDeque<T> implements Deque<T> {
         return getRecursiveHelp(index, nextFirst);
     }
      */
+
+    @Override
+//    public Iterator<T> iterator(){
+//        return new
+//    }
+
+    public boolean equals(Object o){
+        if (!(o instanceof LinkedListDeque<?>) || size == ((LinkedListDeque<?>) o).size()) {
+            return false;
+        }
+        for (int i = 0; i < size; i++) {
+            if (items[i] != ((LinkedListDeque<?>) o).get(i)){
+                return false;
+            }
+        }
+        return true;
+    }
 }

@@ -25,16 +25,14 @@ public class LinkedListDeque<T> implements Deque<T> {
     private int size;
 
     /**
-     * Creates ab empty linked list deque.
-     */
+     * Creates ab empty linked list deque. */
     public LinkedListDeque() {
         size = 0;
         sentinel = new TNode(sentinel, (T) new Object(), sentinel);
     }
 
     /**
-     * Creates a deep copy of the other.
-     */
+     * Creates a deep copy of the other. */
     public LinkedListDeque(LinkedListDeque other) {
         size = 0;
         sentinel = new TNode(sentinel, 63, sentinel);
@@ -44,8 +42,7 @@ public class LinkedListDeque<T> implements Deque<T> {
     }
 
     /**
-     * Adds an item of type T to the front of the deque.
-     */
+     * Adds an item of type T to the front of the deque. */
     public void addFirst(T item) {
         TNode tempNode = new TNode(sentinel, item, sentinel.next);
         if (size == 0) {
@@ -60,8 +57,7 @@ public class LinkedListDeque<T> implements Deque<T> {
     }
 
     /**
-     * Adds an item of type T to the back of the deque.
-     */
+     * Adds an item of type T to the back of the deque. */
     public void addLast(T item) {
         TNode tempNode = new TNode(sentinel.prev, item, sentinel);
         if (size == 0) {
@@ -88,16 +84,14 @@ public class LinkedListDeque<T> implements Deque<T> {
     }*/
 
     /**
-     * Returns the number of the items in the deque.
-     */
+     * Returns the number of the items in the deque. */
     public int size() {
         return size;
     }
 
     /**
      * Prints the items in the deque from first to last, separated by a space.
-     * Once all the items have been printed, print out a new line.
-     */
+     * Once all the items have been printed, print out a new line. */
     public void printDeque() {
         TNode prevNode = sentinel.next;
         while (prevNode != sentinel) {
@@ -113,8 +107,7 @@ public class LinkedListDeque<T> implements Deque<T> {
 
     /**
      * Removes and returns the item at the front of the deque.
-     * If no such item exists, returns null.
-     */
+     * If no such item exists, returns null. */
     public T removeFirst() {
         if (isEmpty()) {
             return null;
@@ -133,8 +126,7 @@ public class LinkedListDeque<T> implements Deque<T> {
 
     /**
      * Removes and returns the item at the back of the deque.
-     * If no such item exists, returns null.
-     */
+     * If no such item exists, returns null. */
     public T removeLast() {
         if (isEmpty()) {
             return null;
@@ -153,8 +145,7 @@ public class LinkedListDeque<T> implements Deque<T> {
 
     /**
      * Gets the item at the given index, where 0 is the front, 1 is the next item, and so forth.
-     * If no such item exists, returns null. Must not alter the deque.
-     */
+     * If no such item exists, returns null. Must not alter the deque. */
     public T get(int index) {
         if (index > size - 1) {
             return null;
@@ -167,8 +158,7 @@ public class LinkedListDeque<T> implements Deque<T> {
     }
 
     /**
-     * Same as get, but uses recursion.
-     */
+     * Same as get, but uses recursion. */
     private T getRecursiveHelp(int index, TNode currNode) {
         if (index == 0) {
             return (T) currNode.item;
@@ -181,5 +171,29 @@ public class LinkedListDeque<T> implements Deque<T> {
             return null;
         }
         return getRecursiveHelp(index, sentinel.next);
+    }
+
+    /** The deque object we'll make are iterable, so we must provide this method
+     * to return an iterator. */
+//    public Iterator<T> iterator(){
+//
+//    }
+
+    /** Returns whether or not the parameter o is equal to the Deque. o is considered equal
+     * if it is a seque and it contains the same contents in the same order. */
+    public boolean equals(Object o){
+        if (!(o instanceof LinkedListDeque<?>) || size == ((LinkedListDeque<?>) o).size()) {
+            return false;
+        }
+        TNode prevNode = sentinel.next;
+        TNode oNode = ((LinkedListDeque<?>) o).sentinel.next;
+        while (prevNode != null) {
+            if (prevNode.item != oNode.item){
+                return false;
+            }
+            prevNode = prevNode.next;
+            oNode = oNode.next;
+        }
+        return true;
     }
 }
