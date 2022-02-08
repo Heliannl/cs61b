@@ -1,6 +1,6 @@
 package deque;
 
-public class LinkedListDeque<T> {
+public class LinkedListDeque<T> implements Deque<T> {
     /**
      * Request:
      * 1.add and remove must not involve any looping or recursion, and take "constant time"
@@ -78,13 +78,14 @@ public class LinkedListDeque<T> {
     /**
      * Returns true if deque is empty, false otherwise.
      */
+    /**
     public boolean isEmpty() {
         if (size == 0) {
             return true;
         } else {
             return false;
         }
-    }
+    }*/
 
     /**
      * Returns the number of the items in the deque.
