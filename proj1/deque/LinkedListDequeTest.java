@@ -167,8 +167,9 @@ public class LinkedListDequeTest {
         lld2.removeFirst();
         assertEquals(false, lld1.equals(lld2));
 
-        /** LinkedListDeque and ArrayDeques with the same elements should be equal. */
+        /** LinkedListDeque and ArrayDeque with the same elements should be equal. */
         ArrayDeque<String> lld3 = new ArrayDeque<>();
+
         lld3.addFirst("aaa");
         assertEquals(true, lld1.equals(lld3));
         assertEquals(true, lld3.equals(lld1));
