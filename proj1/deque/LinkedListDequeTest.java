@@ -160,6 +160,8 @@ public class LinkedListDequeTest {
 
         lld1.addFirst("aaa");
         assertEquals(false, lld1.equals(lld2));
+        assertEquals(false, lld1.equals(lld2));
+        assertEquals(false, lld2.equals(lld1));
 
         lld2.addFirst("aaa");
         assertEquals(true, lld1.equals(lld2));
