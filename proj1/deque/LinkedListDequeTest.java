@@ -155,20 +155,22 @@ public class LinkedListDequeTest {
     @Test
     public void equalsTest() {
         LinkedListDeque<String> lld1 = new LinkedListDeque<String>();
-        lld1.addFirst("aaa");
-        lld1.addFirst("bbb");
-        lld1.addFirst("ccc");
-        lld1.addFirst("ddd");
-
         LinkedListDeque<String> lld2 = new LinkedListDeque<String>();
-        lld2.addFirst("aaa");
-        lld2.addFirst("bbb");
-        lld2.addFirst("ccc");
-        lld2.addFirst("ddd");
+        assertEquals(true, lld1.equals(lld2));
 
+        lld1.addFirst("aaa");
+        assertEquals(false, lld1.equals(lld2));
+
+        lld2.addFirst("aaa");
         assertEquals(true, lld1.equals(lld2));
 
         lld2.removeFirst();
         assertEquals(false, lld1.equals(lld2));
+
+        /** LinkedListDeque and ArrayDeques with the same elements should be equal. */
+        ArrayDeque<String> lld3 = new ArrayDeque<>();
+        lld3.addFirst("aaa");
+        assertEquals(true, lld1.equals(lld3));
+        assertEquals(true, lld3.equals(lld1));
     }
 }

@@ -34,7 +34,7 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
     }
 
     /**
-     * Creates a deep copy of the other. */
+     * Creates a deep copy of the other.
     public LinkedListDeque(LinkedListDeque other) {
         size = 0;
         sentinel = new TNode(sentinel, 63, sentinel);
@@ -42,6 +42,7 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
             addLast((T) other.get(i));
         }
     }
+     */
 
     /**
      * Adds an item of type T to the front of the deque. */
@@ -236,7 +237,7 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
         if (o == null) {
             return false;
         }
-        if (o.getClass() != this.getClass()) {
+        if (!(o instanceof Deque<?>)) {
             return false;
         }
         LinkedListDeque<T> other = (LinkedListDeque<T>) o;

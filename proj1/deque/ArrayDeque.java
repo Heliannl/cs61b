@@ -24,12 +24,13 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
         nextLast = 1;
     }
 
+    /**
     public ArrayDeque(ArrayDeque other) {
         size = 0;
         for (int i = 0; i < other.size; i++) {
             addLast((T) other.get(i));
         }
-    }
+    }*/
 
     private void resize(int capacity) {
         T[] resizeItems = (T[]) new Object[capacity];
@@ -128,7 +129,7 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
     }
      */
 
-    public class TIterator implements Iterator<T> {
+    private class TIterator implements Iterator<T> {
         private int wizPos;
 
         public TIterator() {
@@ -173,7 +174,7 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
         if (o == null) {
             return false;
         }
-        if (o.getClass() != this.getClass()) {
+        if (!(o instanceof Deque<?>)) {
             return false;
         }
         ArrayDeque<T> other = (ArrayDeque<T>) o;

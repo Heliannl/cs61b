@@ -21,6 +21,14 @@ public class ArrayDequeTest {
 
         assertEquals(12, (int) ad1.removeLast());
         assertTrue("lld1 should be empty after removal", ad1.isEmpty());
+
+        ad1.addFirst(12);
+        ad1.removeLast();
+        assertTrue(ad1.isEmpty());
+
+        ad1.addLast(12);
+        ad1.removeFirst();
+        assertTrue(ad1.isEmpty());
     }
 
     @Test
@@ -36,6 +44,12 @@ public class ArrayDequeTest {
         assertEquals(2, (int) ad1.get(1));
         assertEquals(17, (int) ad1.get(3));
         assertEquals(null, ad1.get(8));
+
+        ArrayDeque<Integer> ad2 = new ArrayDeque<>();
+        for (int i = 0; i < 8; i++) {
+            ad2.addLast(i);
+        }
+        assertEquals(0, (int) ad2.get(0));
     }
 
     @Test
