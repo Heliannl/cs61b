@@ -59,4 +59,39 @@ public class ArrayDequeTest {
         System.out.println("Printing out deque: ");
         ad1.printDeque();
     }
+
+    @Test
+    public void iteratorTest() {
+        ArrayDeque<String> lld1 = new ArrayDeque<String>();
+        lld1.addFirst("aaa");
+        lld1.addFirst("bbb");
+        lld1.addFirst("ccc");
+        lld1.addFirst("ddd");
+
+        lld1.printDeque();
+
+        for (String s : lld1) {
+            System.out.println(s);
+        }
+    }
+
+    @Test
+    public void equalsTest() {
+        ArrayDeque<String> lld1 = new ArrayDeque<String>();
+        lld1.addFirst("aaa");
+        lld1.addFirst("bbb");
+        lld1.addFirst("ccc");
+        lld1.addFirst("ddd");
+
+        ArrayDeque<String> lld2 = new ArrayDeque<String>();
+        lld2.addFirst("aaa");
+        lld2.addFirst("bbb");
+        lld2.addFirst("ccc");
+        lld2.addFirst("ddd");
+
+        assertEquals(true, lld1.equals(lld2));
+
+        lld2.removeFirst();
+        assertEquals(false, lld1.equals(lld2));
+    }
 }

@@ -1,6 +1,8 @@
 package deque;
 
-public class ArrayDeque<T> implements Deque<T> {
+import java.util.Iterator;
+
+public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
     /**
      * Request:
      * 1.add and remove take constant time, except during resizing operations
@@ -126,17 +128,60 @@ public class ArrayDeque<T> implements Deque<T> {
     }
      */
 
-    @Override
-//    public Iterator<T> iterator(){
-//        return new
-//    }
+    public class TIterator implements Iterator<T> {
+        private int wizPos;
 
-    public boolean equals(Object o){
+        public TIterator() {
+            wizPos = 0;
+        }
+
+        public boolean hasNext() {
+            return wizPos < size;
+        }
+
+        public T next() {
+            T returnItem = get(wizPos);
+            wizPos++;
+            return returnItem;
+        }
+    }
+
+    public Iterator<T> iterator() {
+        return new TIterator();
+    }
+
+    /** default .equals() == */
+    /* My solution
+    @Override
+    public boolean equals(Object o) {
         if (!(o instanceof LinkedListDeque<?>) || size == ((LinkedListDeque<?>) o).size()) {
             return false;
         }
         for (int i = 0; i < size; i++) {
-            if (items[i] != ((LinkedListDeque<?>) o).get(i)){
+            if (items[i] != ((LinkedListDeque<?>) o).get(i)) {
+                return false;
+            }
+        }
+        return true;
+    }
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null) {
+            return false;
+        }
+        if (o.getClass() != this.getClass()) {
+            return false;
+        }
+        ArrayDeque<T> other = (ArrayDeque<T>) o;
+        if (this.size() != other.size()) {
+            return false;
+        }
+        for (int i = 0; i < this.size(); i++) {
+            if (this.get(i) != other.get(i)) {
                 return false;
             }
         }
