@@ -23,17 +23,17 @@ public class TimeSLList {
     }
 
     public static void timeGetLast() {
-        AList<Integer> Ns = new AList<>();
+        AList<Integer> ns = new AList<>();
         AList<Double> times = new AList<>();
         AList<Integer> opCounts = new AList<>();
         int M = 10000;
-        for (int i = 1000; i <= 128000; i*=2) {
-            Ns.addLast(i);
+        for (int i = 1000; i <= 128000; i *= 2) {
+            ns.addLast(i);
             opCounts.addLast(M);
         }
-        for (int i = 0; i < Ns.size(); i++) {
+        for (int i = 0; i < ns.size(); i++) {
             SLList<Integer> temp = new SLList<>();
-            int N = Ns.get(i);
+            int N = ns.get(i);
             for (int j = 0; j < N; j++) {
                 temp.addLast(j);
             }
@@ -44,7 +44,7 @@ public class TimeSLList {
             double timeInSeconds = sw.elapsedTime();
             times.addLast(timeInSeconds);
         }
-        printTimingTable(Ns, times, opCounts);
+        printTimingTable(ns, times, opCounts);
     }
 
 }

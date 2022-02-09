@@ -31,9 +31,9 @@ public class TestBuggyAList {
         BuggyAList<Integer> bl = new BuggyAList<>();
         int N = 5000;
         for (int i = 0; i < N; i++) {
-            int operationNumber = StdRandom.uniform(0,4);
+            int operationNumber = StdRandom.uniform(0, 4);
             if (operationNumber == 0) {
-                int randVal = StdRandom.uniform(0,100);
+                int randVal = StdRandom.uniform(0, 100);
                 al.addLast(randVal);
                 bl.addLast(randVal);
                 System.out.println("addLast(" + randVal + ")");
