@@ -171,6 +171,7 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
                 b[h] = createBucket();
             }
             b[h].add(n);
+            size++;
         } else {
             target.value = value;
         }
@@ -179,6 +180,7 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
     private void resize(int capacity) {
         Collection<Node>[] newBuckets = createTable(capacity);
         numBuckets = capacity;
+        size = 0;
         for (int i = 0; i < numBuckets/2; i++){
             if (buckets[i] == null) {
                 continue;
@@ -193,19 +195,7 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
     @Override
     public void put(K key, V value) {
         keys.add(key);
-        Node n = createNode(key, value);
-        int h = key.hashCode();
-        h = Math.floorMod(h, numBuckets);
-        Node target = search(key, buckets);
-        if (target == null) {
-            if (buckets[h] == null) {
-                buckets[h] = createBucket();
-            }
-            buckets[h].add(n);
-            size++;
-        } else {
-            target.value = value;
-        }
+        put(key, value, buckets);
         if ((double) size / numBuckets >= loadFactor) {
             resize(numBuckets * 2);
         }
