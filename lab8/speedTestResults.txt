@@ -1,0 +1,138 @@
+This program inserts random Strings of length L
+ Into different types of maps as <String, Integer> pairs.
+
+What would you like L to be?: 10
+
+Enter # strings to insert into hashmap.ULLMap: 10
+class hashmap.ULLMap: 0.03 sec
+
+Enter # strings to insert into your hashmap.MyHashMap: 10
+class hashmap.MyHashMap: 0.00 sec
+
+Enter # strings to insert into Java's HashMap: 10
+Java's Built-in HashMap: 0.00 sec
+
+Enter # strings to insert into hashmap.ULLMap: 100
+class hashmap.ULLMap: 0.00 sec
+
+Enter # strings to insert into your hashmap.MyHashMap: 100
+class hashmap.MyHashMap: 0.00 sec
+
+Enter # strings to insert into Java's HashMap: 100
+Java's Built-in HashMap: 0.00 sec
+
+Would you like to try more timed-tests? (y/n)y
+
+Enter # strings to insert into hashmap.ULLMap: 1000
+class hashmap.ULLMap: 0.01 sec
+
+Enter # strings to insert into your hashmap.MyHashMap: 1000
+class hashmap.MyHashMap: 0.01 sec
+
+Enter # strings to insert into Java's HashMap: 1000
+Java's Built-in HashMap: 0.00 sec
+
+Would you like to try more timed-tests? (y/n)y
+
+Enter # strings to insert into hashmap.ULLMap: 10000
+class hashmap.ULLMap: 0.27 sec
+
+Enter # strings to insert into your hashmap.MyHashMap: 10000
+class hashmap.MyHashMap: 0.01 sec
+
+Enter # strings to insert into Java's HashMap: 10000
+Java's Built-in HashMap: 0.01 sec
+
+
+ This program inserts lexicographically increasing Stringsinto Maps as <String, Integer> pairs.
+
+Enter # strings to insert into hashmap.ULLMap: 10
+class hashmap.ULLMap: 0.00 sec
+
+Enter # strings to insert into hashmap.MyHashMap: 10
+class hashmap.MyHashMap: 0.00 sec
+
+Enter # strings to insert into Java's HashMap: 10
+Java's Built-in HashMap: 0.00 sec
+
+Would you like to try more timed-tests? (y/n): y
+
+Enter # strings to insert into hashmap.ULLMap: 100
+class hashmap.ULLMap: 0.00 sec
+
+Enter # strings to insert into hashmap.MyHashMap: 100
+class hashmap.MyHashMap: 0.00 sec
+
+Enter # strings to insert into Java's HashMap: 100
+Java's Built-in HashMap: 0.00 sec
+
+Would you like to try more timed-tests? (y/n): y
+
+Enter # strings to insert into hashmap.ULLMap: 1000
+class hashmap.ULLMap: 0.01 sec
+
+Enter # strings to insert into hashmap.MyHashMap: 1000
+class hashmap.MyHashMap: 0.01 sec
+
+Enter # strings to insert into Java's HashMap: 1000
+Java's Built-in HashMap: 0.00 sec
+
+Would you like to try more timed-tests? (y/n): y
+
+Enter # strings to insert into hashmap.ULLMap: 10000
+class hashmap.ULLMap: 0.35 sec
+
+Enter # strings to insert into hashmap.MyHashMap: 10000
+class hashmap.MyHashMap: 0.02 sec
+
+Enter # strings to insert into Java's HashMap: 10000
+Java's Built-in HashMap: 0.00 sec
+
+
+ This program inserts random Strings of length L
+ Into different types of maps as <String, Integer> pairs.
+
+What would you like L to be?: 10
+
+Enter # strings to insert into each map: 10
+class hashmap.MyHashMapALBuckets: 0.00 sec
+class hashmap.MyHashMapLLBuckets: 0.00 sec
+class hashmap.MyHashMapTSBuckets: 0.00 sec
+class hashmap.MyHashMapHSBuckets: 0.00 sec
+class hashmap.MyHashMapPQBuckets: 0.00 sec
+
+Would you like to try more timed-tests? (y/n)y
+
+Enter # strings to insert into each map: 100
+class hashmap.MyHashMapALBuckets: 0.00 sec
+class hashmap.MyHashMapLLBuckets: 0.00 sec
+class hashmap.MyHashMapTSBuckets: 0.00 sec
+class hashmap.MyHashMapHSBuckets: 0.00 sec
+class hashmap.MyHashMapPQBuckets: 0.00 sec
+
+Would you like to try more timed-tests? (y/n)y
+
+Enter # strings to insert into each map: 1000
+class hashmap.MyHashMapALBuckets: 0.00 sec
+class hashmap.MyHashMapLLBuckets: 0.00 sec
+class hashmap.MyHashMapTSBuckets: 0.01 sec
+class hashmap.MyHashMapHSBuckets: 0.00 sec
+class hashmap.MyHashMapPQBuckets: 0.00 sec
+
+Would you like to try more timed-tests? (y/n)y
+
+Enter # strings to insert into each map: 10000
+class hashmap.MyHashMapALBuckets: 0.02 sec
+class hashmap.MyHashMapLLBuckets: 0.01 sec
+class hashmap.MyHashMapTSBuckets: 0.02 sec
+class hashmap.MyHashMapHSBuckets: 0.02 sec
+class hashmap.MyHashMapPQBuckets: 0.02 sec
+
+Would you like to try more timed-tests? (y/n)y
+
+Enter # strings to insert into each map: 100000
+class hashmap.MyHashMapALBuckets: 0.11 sec
+class hashmap.MyHashMapLLBuckets: 0.12 sec
+class hashmap.MyHashMapTSBuckets: 0.14 sec
+class hashmap.MyHashMapHSBuckets: 0.32 sec
+class hashmap.MyHashMapPQBuckets: 0.14 sec
