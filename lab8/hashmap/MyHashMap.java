@@ -161,7 +161,7 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
      * If the map previously contained a mapping for the key,
      * the old value is replaced. */
 
-    public void put(K key, V value, Collection<Node>[] b) {
+    private void put(K key, V value, Collection<Node>[] b) {
         Node n = createNode(key, value);
         int h = key.hashCode();
         h = Math.floorMod(h, numBuckets);
@@ -223,7 +223,16 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
      * UnsupportedOperationException. */
     @Override
     public V remove(K key) {
-        throw new UnsupportedOperationException();
+        int h = key.hashCode();
+        h = Math.floorMod(h, numBuckets);
+        Node target = search(key, buckets);
+        V returnValue = null;
+        if (target != null) {
+            returnValue = target.value;
+            buckets[h].remove(target);
+            keys.remove(key);
+        }
+        return returnValue;
     }
 
     /**
@@ -232,7 +241,16 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
      * throw an UnsupportedOperationException. */
     @Override
     public V remove(K key, V value) {
-        throw new UnsupportedOperationException();
+        int h = key.hashCode();
+        h = Math.floorMod(h, numBuckets);
+        Node target = search(key, buckets);
+        V returnValue = null;
+        if (target != null && target.value.equals(value)) {
+            returnValue = value;
+            buckets[h].remove(target);
+            keys.remove(key);
+        }
+        return returnValue;
     }
 
 
