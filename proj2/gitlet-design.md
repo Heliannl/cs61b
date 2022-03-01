@@ -1,15 +1,16 @@
 # Gitlet Design Document
 
-**Name**:
+**Name**: Heliannl
 
 ## Classes and Data Structures
 
-### Class 1
+### Commit
 
-#### Fields
+#### Instance variables
 
-1. Field 1
-2. Field 2
+1. parent
+2. timestamp
+3. message
 
 
 ### Class 2
