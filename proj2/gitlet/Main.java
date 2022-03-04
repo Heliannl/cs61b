@@ -1,7 +1,5 @@
 package gitlet;
 
-import java.util.Date;
-
 /** Driver class for Gitlet, a subset of the Git version-control system.
  *  @author Heliannl
  */
@@ -18,32 +16,27 @@ public class Main {
      */
 
     public static void main(String[] args) {
-        System.out.println(new Date());
         if (args.length == 0) {
             System.out.println("Please enter a command.");
             System.exit(0);
         }
         String firstArg = args[0];
-        String message;
         switch(firstArg) {
             case "init":
                 Repository.init();
                 break;
             case "add":
-                message = args[1];
-                Repository.add(message);
+                Repository.add(args[1]);
                 break;
             case "commit":
                 if (args.length == 1) {
                     System.out.println("Please enter a commit message.");
                 } else {
-                    message = args[1];
-                    Repository.commit(message);
+                    Repository.commit(args[1]);
                 }
                 break;
             case "rm":
-                message = args[1];
-                Repository.rm(message);
+                Repository.rm(args[1]);
                 break;
             case "log":
                 Repository.log();
@@ -52,11 +45,23 @@ public class Main {
                 Repository.globalLog();
                 break;
             case "find":
-                Repository.find();
+                Repository.find(args[1]);
                 break;
             case "status":
+                Repository.status();
+                break;
             case "checkout":
+                if (args.length == 2) {
+                    Repository.checkoutBranch(args[1]);
+                } else if (args.length == 3) {
+                    Repository.checkoutFile(args[2]);
+                } else {
+                    Repository.checkout(args[1], args[3]);
+                }
+                break;
             case "branch":
+                Repository.branch(args[1]);
+                break;
             case "rm-branch":
             case "reset":
             case "merge":

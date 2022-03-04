@@ -35,6 +35,10 @@ public class Commit implements Serializable {
         return this.message;
     }
 
+    public Map<String, String> getFiles() {
+        return this.files;
+    }
+
     public void update(String parent, String message, Date timestamp) {
         this.parent = parent;
         this.timestamp = timestamp;
