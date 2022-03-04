@@ -1,34 +1,33 @@
 package gitlet;
 
 import java.io.Serializable;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 /** Represents a gitlet commit object.
  *  @author Heliannl
  */
 
-public class Commit {
-    public class Blobs implements Serializable {
-    }
-
+public class Commit implements Serializable {
     /** The message of this Commit. */
-    private Commit parent;
-    private String timestamp;
+    private String parent;
+    private Date timestamp;
     private String message;
-    private Blobs[] files;
+    private Map<String, String> files;
 
-    public Commit(String message, Commit parent) {
+    public Commit(String message, String parent, Date timestamp) {
         this.parent = parent;
         this.message = message;
-        if (this.parent == null) {
-            this.timestamp = "00:00:00 UTC, Thursday, 1 January 1970";
-        }
+        this.files = new HashMap<>();
+        this.timestamp = timestamp;
     }
 
-    public Commit getParent() {
+    public String getParent() {
         return this.parent;
     }
 
-    public String getTimestamp() {
+    public Date getTimestamp() {
         return this.timestamp;
     }
 
@@ -36,4 +35,20 @@ public class Commit {
         return this.message;
     }
 
+    public void update(String parent, String message, Date timestamp) {
+        this.parent = parent;
+        this.timestamp = timestamp;
+        this.message = message;
+    }
+
+    public void addCommit(String fileName, String sha1) {
+        files.put(fileName, sha1);
+    }
+
+    public String getSha(String fileName) {
+        if (files.containsKey(fileName)) {
+            return files.get(fileName);
+        }
+        return null;
+    }
 }

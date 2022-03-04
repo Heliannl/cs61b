@@ -1,5 +1,7 @@
 package gitlet;
 
+import java.util.Date;
+
 /** Driver class for Gitlet, a subset of the Git version-control system.
  *  @author Heliannl
  */
@@ -14,30 +16,44 @@ public class Main {
      *                      creating a new commit.
      * @param args arguments from the command line
      */
+
     public static void main(String[] args) {
+        System.out.println(new Date());
         if (args.length == 0) {
             System.out.println("Please enter a command.");
             System.exit(0);
         }
         String firstArg = args[0];
-        String text;
+        String message;
         switch(firstArg) {
             case "init":
-                Repository.setupPersistence();
+                Repository.init();
                 break;
             case "add":
-                validateNumArgs(args, 2);
-                text = args[1];
-                Repository.add();
+                message = args[1];
+                Repository.add(message);
                 break;
             case "commit":
-                validateNumArgs(args, 2);
-                text = args[1];
+                if (args.length == 1) {
+                    System.out.println("Please enter a commit message.");
+                } else {
+                    message = args[1];
+                    Repository.commit(message);
+                }
                 break;
             case "rm":
+                message = args[1];
+                Repository.rm(message);
+                break;
             case "log":
+                Repository.log();
+                break;
             case "global-log":
+                Repository.globalLog();
+                break;
             case "find":
+                Repository.find();
+                break;
             case "status":
             case "checkout":
             case "branch":
@@ -49,10 +65,5 @@ public class Main {
                 System.exit(0);
         }
     }
-    public static void validateNumArgs(String[] args, int n) {
-        if (args.length != n) {
-            System.out.println("Incorrect operands.");
-            System.exit(0);
-        }
-    }
+
 }
