@@ -1,6 +1,7 @@
 package gitlet;
 
 import java.io.File;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -51,15 +52,11 @@ public class Repository {
         } else {
             String currFileSha = sha1(serialize(addFile));
             File stageFile = join(STAGING_DIR, fileName);
-            /** If the current working version of the file is identical to the version
-             * in the current commit, do not stag it to be added, and remove it from the
-             * staging area if it is already there. */
             File headCommit = join(COMMITS_DIR, readContentsAsString(HEAD));
             Commit currCommit = readObject(headCommit, Commit.class);
             if (currCommit.getSha(fileName)!=null && currCommit.getSha(fileName).equals(currFileSha)) {
                 stageFile.delete();
             }
-            /** store current file in the staging area (name: fileName, contents: sha1). */
             writeContents(stageFile, currFileSha);
             File realCont = join(TEMP_DIR, currFileSha);
             writeContents(realCont, readContents(addFile));
@@ -100,12 +97,24 @@ public class Repository {
     }
 
     public static void rm(String fileName) {
-        if (join(STAGING_DIR,fileName).exists()) {
-            join(STAGING_DIR,fileName).delete();
-        }
+        File rmFile = join(CWD, fileName);
+        File stageFile = join(STAGING_DIR,fileName);
+        String rmFileSha = sha1(serialize(rmFile));
         String headCommitSha = readContentsAsString(HEAD);
         Commit currCommit = readObject(join(COMMITS_DIR, headCommitSha), Commit.class);
-        if (currCommit.getSha(fileName))
+        String fileSha = currCommit.getSha(fileName);
+        if (stageFile.exists()) {
+            stageFile.delete();
+        } else if (fileSha != null && fileSha.equals(rmFileSha)) {
+            writeContents(stageFile, rmFileSha);
+            File realCont = join(TEMP_DIR, rmFileSha);
+            writeContents(realCont, readContents(rmFile));
+            if (rmFile.exists()) {
+                restrictedDelete(rmFile);
+            }
+        } else {
+            System.out.println("No reason to remove the file.");
+        }
     }
 
     public static void log() {
@@ -147,12 +156,17 @@ public class Repository {
         System.out.println();
         System.out.println("=== Staged Files ===");
         List<String> files = plainFilenamesIn(STAGING_DIR);
+        Collections.sort(files);
         for (String f : files) {
             System.out.println(f);
         }
         System.out.println();
         System.out.println("=== Removed Files ===");
-
+        System.out.println();
+        System.out.println("=== Modifications Not Staged For Commit ===");
+        System.out.println();
+        System.out.println("=== Untracked Files ===");
+        System.out.println();
     }
 
     public static void checkoutBranch(String branchName) {
