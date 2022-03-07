@@ -1,10 +1,7 @@
 package gitlet;
 
 import java.io.File;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static gitlet.Utils.*;
 
@@ -13,18 +10,16 @@ import static gitlet.Utils.*;
  */
 
 public class Repository {
-    /** The current working directory. */
     public static final File CWD = new File(System.getProperty("user.dir"));
-    /** The .gitlet directory. */
     public static final File GITLET_DIR = join(CWD, ".gitlet");
-    /** The .gitlet/objects directory. */
     public static final File BLOBS_DIR = join(GITLET_DIR, "blobs");
     public static final File COMMITS_DIR = join(GITLET_DIR, "commits");
-    public static final File STAGING_DIR = join(GITLET_DIR, "staging");
     public static final File TEMP_DIR = join(GITLET_DIR, "temp");
-    public static final File BRANCHES_DIR = join(GITLET_DIR, "branches");
     public static final File HEAD = join(GITLET_DIR, "HEAD");
-    public static final File MASTER = join(BRANCHES_DIR, "MASTER");
+    public static Map<String, String> stagedF;
+    public static Map<String, String> removedF;
+    public static Map<String, String> branches;
+    public static String activeB;
 
     public static void init() {
         if (GITLET_DIR.exists()) {
@@ -33,14 +28,17 @@ public class Repository {
             GITLET_DIR.mkdir();
             BLOBS_DIR.mkdir();
             COMMITS_DIR.mkdir();
-            STAGING_DIR.mkdir();
             TEMP_DIR.mkdir();
-            BRANCHES_DIR.mkdir();
+            stagedF = new HashMap<>();
+            removedF = new HashMap<>();
+            branches = new HashMap<>();
             Commit initialCommit = new Commit("initial commit", null, new Date(0));
             String name = sha1(serialize(initialCommit));
             File initialCommitFile = join(COMMITS_DIR, name);
             writeObject(initialCommitFile, initialCommit);
             writeContents(HEAD, name);
+            branches.put("master", name);
+            activeB = "master";
         }
     }
 
@@ -51,69 +49,73 @@ public class Repository {
             System.exit(0);
         } else {
             String currFileSha = sha1(serialize(addFile));
-            File stageFile = join(STAGING_DIR, fileName);
             File headCommit = join(COMMITS_DIR, readContentsAsString(HEAD));
             Commit currCommit = readObject(headCommit, Commit.class);
             if (currCommit.getSha(fileName)!=null && currCommit.getSha(fileName).equals(currFileSha)) {
-                stageFile.delete();
+                if (stagedF.containsKey(fileName)) {
+                    stagedF.remove(fileName);
+                }
+            } else {
+                stagedF.put(fileName, currFileSha);
+                File realCont = join(TEMP_DIR, currFileSha);
+                writeContents(realCont, readContents(addFile));
             }
-            writeContents(stageFile, currFileSha);
-            File realCont = join(TEMP_DIR, currFileSha);
-            writeContents(realCont, readContents(addFile));
         }
     }
 
     private static void clearDir(File dirName) {
         List<String> filesInTemp = plainFilenamesIn(dirName);
         for (String f: filesInTemp) {
-            join(dirName,f).delete();
+            File file = join(dirName, f);
+            if (!file.isDirectory()) {
+                file.delete();
+            }
         }
     }
 
     public static void commit(String message) {
-        if (plainFilenamesIn(STAGING_DIR) == null) {
+        if (stagedF.isEmpty()) {
             System.out.println("No changes added to the commit.");
-            return;
+        } else {
+            String headCommitSha = readContentsAsString(HEAD);
+            File headCommitFile = join(COMMITS_DIR, headCommitSha);
+            Commit headCommit = readObject(headCommitFile, Commit.class);
+            headCommit.update(headCommitSha, message, new Date());
+            for (Map.Entry<String, String> entry : stagedF.entrySet()) {
+                String key = entry.getKey();
+                String value = entry.getValue();
+                headCommit.addCommit(key, value);
+                File blobFile = join(BLOBS_DIR, value);
+                writeContents(blobFile, readContents(join(TEMP_DIR,value)));
+            }
+            for (Map.Entry<String, String> entry : removedF.entrySet()) {
+                headCommit.removeCommit(entry.getKey(), entry.getValue());
+            }
+            stagedF.clear();
+            clearDir(TEMP_DIR);
+            String curCommitSha = sha1(serialize(headCommit));
+            File CommitFile = join(COMMITS_DIR, curCommitSha);
+            writeObject(CommitFile, curCommitSha);
+            writeContents(HEAD, curCommitSha);
+            branches.put(activeB, curCommitSha);
         }
-        String headCommitSha = readContentsAsString(HEAD);
-        File headCommit = join(COMMITS_DIR, headCommitSha);
-        Commit currCommit = readObject(headCommit, Commit.class);
-        currCommit.update(headCommitSha, message, new Date());
-        List<String> filesInStag = plainFilenamesIn(STAGING_DIR);
-        for (String f: filesInStag ) {
-            String fSha = readContentsAsString(join(STAGING_DIR,f));
-            currCommit.addCommit(f, fSha);
-            /** store current file's sha1 in the Blobs dir (name: sha1, contents: fileName's real contents). */
-            File blobFile = join(BLOBS_DIR, fSha);
-            writeContents(blobFile, readContents(join(TEMP_DIR,fSha)));
-            System.out.println(readContents(join(TEMP_DIR,fSha)));
-            join(STAGING_DIR,f).delete();
-        }
-        clearDir(TEMP_DIR);
-        String name = sha1(serialize(currCommit));
-        File CommitFile = join(COMMITS_DIR, name);
-        writeObject(CommitFile, currCommit);
-        writeContents(HEAD, name);
     }
 
     public static void rm(String fileName) {
-        File rmFile = join(CWD, fileName);
-        File stageFile = join(STAGING_DIR,fileName);
-        String rmFileSha = sha1(serialize(rmFile));
-        String headCommitSha = readContentsAsString(HEAD);
-        Commit currCommit = readObject(join(COMMITS_DIR, headCommitSha), Commit.class);
-        String fileSha = currCommit.getSha(fileName);
-        if (stageFile.exists()) {
-            stageFile.delete();
-        } else if (fileSha != null && fileSha.equals(rmFileSha)) {
-            writeContents(stageFile, rmFileSha);
-            File realCont = join(TEMP_DIR, rmFileSha);
-            writeContents(realCont, readContents(rmFile));
-            if (rmFile.exists()) {
-                restrictedDelete(rmFile);
-            }
+        if (stagedF.containsKey(fileName)) {
+            stagedF.remove(fileName);
         } else {
-            System.out.println("No reason to remove the file.");
+            String headCommitSha = readContentsAsString(HEAD);
+            Commit currCommit = readObject(join(COMMITS_DIR, headCommitSha), Commit.class);
+            String fileSha = currCommit.getSha(fileName);
+            if (fileSha != null) {
+                removedF.put(fileName, fileSha);
+                if (join(CWD, fileName).exists()) {
+                    restrictedDelete(join(CWD, fileName));
+                }
+            } else {
+                System.out.println("No reason to remove the file.");
+            }
         }
     }
 
@@ -142,26 +144,25 @@ public class Repository {
 
     }
 
+    private static void sortKey(Map map) {
+        Set set = map.keySet();
+        Object[] arr = set.toArray();
+        Arrays.sort(arr);
+        for(Object key: arr) {
+            System.out.println(key);
+        }
+    }
     public static void status() {
         System.out.println("=== Branches ===");
-        List<String> branches = plainFilenamesIn(BRANCHES_DIR);
-        String headSha = readContentsAsString(HEAD);
-        for (String b : branches) {
-            if (readContentsAsString(join(BRANCHES_DIR, b)).equals(headSha)) {
-                System.out.println("*"+b);
-            } else {
-                System.out.println(b);
-            }
-        }
+        String activeBSha = branches.remove(activeB);
+        sortKey(branches);
+        branches.put(activeB, activeBSha);
         System.out.println();
         System.out.println("=== Staged Files ===");
-        List<String> files = plainFilenamesIn(STAGING_DIR);
-        Collections.sort(files);
-        for (String f : files) {
-            System.out.println(f);
-        }
+        sortKey(stagedF);
         System.out.println();
         System.out.println("=== Removed Files ===");
+        sortKey(removedF);
         System.out.println();
         System.out.println("=== Modifications Not Staged For Commit ===");
         System.out.println();
@@ -170,24 +171,29 @@ public class Repository {
     }
 
     public static void checkoutBranch(String branchName) {
-        File branch = join(BRANCHES_DIR, branchName);
-        if (!branch.exists()) {
+        if (!branches.containsKey(branchName)) {
             System.out.println("No such branch exists.");
-        } else if (readContentsAsString(HEAD).equals(readContentsAsString(branch))) {
-            System.out.println("No need to checkout the current branch.");
         } else {
-            File branchSha = join(COMMITS_DIR, readContentsAsString(branch));
-            Commit branchCommit = readObject(branchSha, Commit.class);
-            for (Map.Entry<String, String> entry : branchCommit.getFiles().entrySet()) {
-                File f = join(CWD, entry.getKey());
-                if (f.exists()) {
-                    System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
-                    System.exit(0);
+            if (activeB == branchName) {
+                System.out.println("No need to checkout the current branch.");
+            } else {
+                String headCommitSha = readContentsAsString(HEAD);
+                Commit headCommit = readObject(join(COMMITS_DIR, headCommitSha), Commit.class);
+                String branchCommitSha = branches.get(branchName);
+                Commit branchCommit = readObject(join(COMMITS_DIR, branchCommitSha), Commit.class);
+                for (Map.Entry<String, String> entry : branchCommit.getFiles().entrySet()) {
+                    String FileName = entry.getKey();
+                    File f = join(CWD, FileName);
+                    if (f.exists() && (headCommit.getSha(FileName) != sha1(f))) {
+                        System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+                        System.exit(0);
+                    }
+                    writeContents(f, readContents(join(BLOBS_DIR, entry.getValue())));
                 }
-                writeContents(f, readContents(join(BLOBS_DIR, entry.getValue())));
+                stagedF.clear();
+                activeB = branchName;
+                writeContents(HEAD,branchCommitSha);
             }
-            clearDir(STAGING_DIR);
-            writeContents(HEAD,readContentsAsString(join(GITLET_DIR, branchName)));
         }
     }
 
@@ -214,12 +220,21 @@ public class Repository {
     }
 
     public static void branch(String branchName) {
-        File branch = join(BRANCHES_DIR, branchName);
-        if (branch.exists()) {
+        if (branches.containsKey(branchName)) {
             System.out.println("A branch with that name already exists.");
         } else {
-            writeContents(branch, readContentsAsString(HEAD));
-            writeContents(MASTER, readContentsAsString(HEAD));
+            String headSha = readContentsAsString(HEAD);
+            branches.put(branchName, headSha);
+        }
+    }
+
+    public static void rm_branch(String branchName) {
+        if (!branches.containsKey(branchName)) {
+            System.out.println("A branch with that name does not exists.");
+        } else if (activeB == branchName) {
+            System.out.println("Cannot remove the current branch.");
+        } else {
+            branches.remove(branchName);
         }
     }
 }

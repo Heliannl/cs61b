@@ -63,6 +63,8 @@ public class Main {
                 Repository.branch(args[1]);
                 break;
             case "rm-branch":
+                Repository.rm_branch(args[1]);
+                break;
             case "reset":
             case "merge":
             default:

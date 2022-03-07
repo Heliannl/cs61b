@@ -49,6 +49,8 @@ public class Commit implements Serializable {
         files.put(fileName, sha1);
     }
 
+    public void removeCommit(String fileName, String sha1) { files.remove(fileName, sha1); }
+
     public String getSha(String fileName) {
         if (files.containsKey(fileName)) {
             return files.get(fileName);
