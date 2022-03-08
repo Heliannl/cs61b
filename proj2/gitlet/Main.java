@@ -63,10 +63,14 @@ public class Main {
                 Repository.branch(args[1]);
                 break;
             case "rm-branch":
-                Repository.rm_branch(args[1]);
+                Repository.rmBranch(args[1]);
                 break;
             case "reset":
+                Repository.reset(args[1]);
+                break;
             case "merge":
+                Repository.merge(args[1]);
+                break;
             default:
                 System.out.println("No command with that name exists.");
                 System.exit(0);

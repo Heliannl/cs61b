@@ -1,9 +1,7 @@
 package gitlet;
 
 import java.io.Serializable;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /** Represents a gitlet commit object.
  *  @author Heliannl
@@ -37,6 +35,14 @@ public class Commit implements Serializable {
 
     public Map<String, String> getFiles() {
         return this.files;
+    }
+
+    public List<String> getFileNames() {
+        List<String> names = new ArrayList<>();
+        for (String key : files.keySet()) {
+            names.add(key);
+        }
+        return names;
     }
 
     public void update(String parent, String message, Date timestamp) {
