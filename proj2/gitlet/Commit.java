@@ -1,6 +1,7 @@
 package gitlet;
 
 import java.io.Serializable;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 /** Represents a gitlet commit object.
@@ -10,22 +11,27 @@ import java.util.*;
 public class Commit implements Serializable {
     /** The message of this Commit. */
     private String parent;
-    private Date timestamp;
+    private String timestamp;
     private String message;
     private Map<String, String> files;
+
+    private String utcDateFormat(Date timestamp) {
+        String patternStr = "EEE MMM d HH:mm:ss YYYY Z";
+        return new SimpleDateFormat(patternStr, Locale.US).format(timestamp);
+    }
 
     public Commit(String message, String parent, Date timestamp) {
         this.parent = parent;
         this.message = message;
         this.files = new HashMap<>();
-        this.timestamp = timestamp;
+        this.timestamp = utcDateFormat(timestamp);
     }
 
     public String getParent() {
         return this.parent;
     }
 
-    public Date getTimestamp() {
+    public String getTimestamp() {
         return this.timestamp;
     }
 
@@ -47,7 +53,7 @@ public class Commit implements Serializable {
 
     public void update(String parent, String message, Date timestamp) {
         this.parent = parent;
-        this.timestamp = timestamp;
+        this.timestamp = utcDateFormat(timestamp);
         this.message = message;
     }
 
