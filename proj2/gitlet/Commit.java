@@ -11,6 +11,7 @@ import java.util.*;
 public class Commit implements Serializable {
     /** The message of this Commit. */
     private String parent;
+    private String mergeParent;
     private String timestamp;
     private String message;
     private Map<String, String> files;
@@ -23,6 +24,7 @@ public class Commit implements Serializable {
     public Commit(String message, String parent, Date timestamp) {
         this.parent = parent;
         this.message = message;
+        this.mergeParent = null;
         this.files = new HashMap<>();
         this.timestamp = utcDateFormat(timestamp);
     }
@@ -43,6 +45,10 @@ public class Commit implements Serializable {
         return this.files;
     }
 
+    public String getMergeParent() {
+        return this.mergeParent;
+    }
+
     public List<String> getFileNames() {
         List<String> names = new ArrayList<>();
         for (String key : files.keySet()) {
@@ -55,6 +61,10 @@ public class Commit implements Serializable {
         this.parent = parent;
         this.timestamp = utcDateFormat(timestamp);
         this.message = message;
+    }
+
+    public void addMergeParent(String mergeParent) {
+        this.mergeParent = mergeParent;
     }
 
     public void addCommit(String fileName, String sha1) {

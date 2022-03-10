@@ -1,6 +1,6 @@
 package gitlet;
 
-import java.io.File;
+import java.io.*;
 import java.util.*;
 
 import static gitlet.Utils.*;
@@ -74,30 +74,48 @@ public class Repository {
         }
     }
 
+    private static Commit commitHelper(String message) {
+        String headCommitSha = readContentsAsString(HEAD);
+        File headCommitFile = join(COMMITS_DIR, headCommitSha);
+        Commit headCommit = readObject(headCommitFile, Commit.class);
+        List<String> files = plainFilenamesIn(STAGED_DIR);
+        for (String f : files) {
+            String fSha = readContentsAsString(join(STAGED_DIR, f));
+            headCommit.addCommit(f, fSha);
+            if (!join(BLOBS_DIR, fSha).exists()) {
+                writeContents(join(BLOBS_DIR, fSha), readContents(join(TEMP_DIR, fSha)));
+            }
+        }
+        files = plainFilenamesIn(REMOVED_DIR);
+        for (String f : files) {
+            String fSha = readContentsAsString(join(REMOVED_DIR, f));
+            headCommit.removeCommit(f, fSha);
+        }
+        clearDir(STAGED_DIR);
+        clearDir(REMOVED_DIR);
+        clearDir(TEMP_DIR);
+        headCommit.update(headCommitSha, message, new Date());
+        return headCommit;
+    }
+
+    private static void commit(String message, String mergeParent) {
+        if (STAGED_DIR.list().length == 0 && REMOVED_DIR.list().length == 0) {
+            System.out.println("No changes added to the commit.");
+        } else {
+            Commit headCommit = commitHelper(message);
+            headCommit.addMergeParent(mergeParent);
+            String curCommitSha = sha1(serialize(headCommit));
+            writeObject(join(COMMITS_DIR, curCommitSha), headCommit);
+            writeContents(HEAD, curCommitSha);
+            writeContents(join(BRANCHES_DIR, readContentsAsString(ACTIVE_B)), curCommitSha);
+        }
+    }
+
     public static void commit(String message) {
         if (STAGED_DIR.list().length == 0 && REMOVED_DIR.list().length == 0) {
             System.out.println("No changes added to the commit.");
         } else {
-            String headCommitSha = readContentsAsString(HEAD);
-            File headCommitFile = join(COMMITS_DIR, headCommitSha);
-            Commit headCommit = readObject(headCommitFile, Commit.class);
-            headCommit.update(headCommitSha, message, new Date());
-            List<String> files = plainFilenamesIn(STAGED_DIR);
-            for (String f : files) {
-                String fSha = readContentsAsString(join(STAGED_DIR, f));
-                headCommit.addCommit(f, fSha);
-                if (!join(BLOBS_DIR, fSha).exists()){
-                    writeContents(join(BLOBS_DIR, fSha), readContents(join(TEMP_DIR, fSha)));
-                }
-            }
-            files = plainFilenamesIn(REMOVED_DIR);
-            for (String f : files) {
-                String f_sha = readContentsAsString(join(REMOVED_DIR, f));
-                headCommit.removeCommit(f, f_sha);
-            }
-            clearDir(STAGED_DIR);
-            clearDir(REMOVED_DIR);
-            clearDir(TEMP_DIR);
+            Commit headCommit = commitHelper(message);
             String curCommitSha = sha1(serialize(headCommit));
             writeObject(join(COMMITS_DIR, curCommitSha), headCommit);
             writeContents(HEAD, curCommitSha);
@@ -130,10 +148,9 @@ public class Repository {
         while (true) {
             System.out.println("===");
             System.out.println("commit " + headCommitSha);
-            System.out.println("Date: " + currCommit.getTimestamp());
-            System.out.println(currCommit.getMessage());
-            System.out.println();
+            String mergeParSha = currCommit.getMergeParent();
             headCommitSha = currCommit.getParent();
+            withMergeParent(currCommit, mergeParSha, headCommitSha);
             if (headCommitSha == null) {
                 break;
             }
@@ -147,10 +164,19 @@ public class Repository {
             System.out.println("===");
             System.out.println("commit " + c);
             Commit currCommit = readObject(join(COMMITS_DIR, c), Commit.class);
-            System.out.println("Date: " + currCommit.getTimestamp());
-            System.out.println(currCommit.getMessage());
-            System.out.println();
+            String mergeParSha = currCommit.getMergeParent();
+            String headCommitSha = currCommit.getParent();
+            withMergeParent(currCommit, mergeParSha, headCommitSha);
         }
+    }
+
+    private static void withMergeParent(Commit currCommit, String mergeParSha, String headCommitSha) {
+        if (mergeParSha != null) {
+            System.out.println("Merge: " + mergeParSha.substring(0, 7) + headCommitSha.substring(0, 7));
+        }
+        System.out.println("Date: " + currCommit.getTimestamp());
+        System.out.println(currCommit.getMessage());
+        System.out.println();
     }
 
     public static void find(String message) {
@@ -275,7 +301,24 @@ public class Repository {
         }
     }
 
-    public static void reset(String CommitId) {
+    private static void untrackedTest() {
+        String headCommitSha = readContentsAsString(HEAD);
+        Commit headCommit = readObject(join(COMMITS_DIR, headCommitSha), Commit.class);
+        List<String> files = plainFilenamesIn(CWD);
+        for (String file: files) {
+            File f = join(CWD, file);
+            if (f.exists() && !(headCommit.getSha(file).equals(sha1(readContents(f))))) {
+                System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+                System.exit(0);
+            }
+        }
+    }
+
+    public static void reset(String commitId) {
+        if (!join(COMMITS_DIR, commitId).exists()) {
+            System.out.println("No commit with that id exists.");
+        }
+        untrackedTest();
 
     }
 
@@ -306,14 +349,31 @@ public class Repository {
     private static List<String> receiveUnionList(List<String> a, List<String> b) {
         List<String> resultList = new ArrayList<>();
         Set<String> aSet = new TreeSet<>(a);
-        for (String id : b) {
-            aSet.add(id);
-        }
+        aSet.addAll(b);
         resultList = new ArrayList<>(aSet);
         return resultList;
     }
 
+    private static boolean notEmpty(File dir) {
+        if (dir.length() == 0) {
+            return false;
+        }
+        return true;
+    }
+
     public static void merge(String branchName) {
+        if (notEmpty(STAGED_DIR) || notEmpty(REMOVED_DIR)) {
+            System.out.println("You have uncommitted changes.");
+            System.exit(0);
+        }
+        File br = join(BRANCHES_DIR, branchName);
+        if (!br.exists()) {
+            System.out.println("A branch with that name does not exists.");
+        }
+        if (readContentsAsString(ACTIVE_B).equals(branchName)) {
+            System.out.println("Cannot merge a branch with itself.");
+        }
+        untrackedTest();
         String headCommitSha = readContentsAsString(HEAD);
         Commit headCommit = readObject(join(COMMITS_DIR, headCommitSha), Commit.class);
         String branchCommitSha = readContentsAsString(join(BRANCHES_DIR, branchName));
@@ -334,10 +394,57 @@ public class Repository {
             List<String> fInSplitN = splitCommit.getFileNames();
             List<String> allNames = receiveUnionList(receiveUnionList(fInHeadN, fInBranchN), fInSplitN);
             for (String n : allNames) {
-                if (fInBranchN.contains(n) && fInHeadN.contains(n)) {
-
+                String c = fInHead.get(n);
+                String b = fInBranch.get(n);
+                String s = fInSplit.get(n);
+                if (fInSplitN.contains(n) && fInBranchN.contains(n) && fInHeadN.contains(n) && !b.equals(s) && c.equals(s)) {
+                    writeContents(join(STAGED_DIR, n), b);
+                } else if (fInSplitN.contains(n) && fInBranchN.contains(n) && fInHeadN.contains(n) && b.equals(s) && !c.equals(s)) {
+                    continue;
+                } else if (fInSplitN.contains(n) && fInBranchN.contains(n) && fInHeadN.contains(n) && !b.equals(s) && !c.equals(s) && b.equals(c)) {
+                    continue;
+                } else if (fInSplitN.contains(n) && !fInBranchN.contains(n) && !fInHeadN.contains(n)) {
+                    continue;
+                } else if (!fInSplitN.contains(n) && !fInBranchN.contains(n) && fInHeadN.contains(n)) {
+                    continue;
+                } else if (!fInSplitN.contains(n) && fInBranchN.contains(n) && !fInHeadN.contains(n)) {
+                    writeContents(join(STAGED_DIR, n), b);
+                } else if (fInSplitN.contains(n) && !fInBranchN.contains(n) && fInHeadN.contains(n) && c.equals(s)) {
+                    writeContents(join(REMOVED_DIR, n), c); //&& untracked
+                } else if (fInSplitN.contains(n) && fInBranchN.contains(n) && !fInHeadN.contains(n) && b.equals(s)) {
+                    continue;
+                } else {
+                    File sFile = join(STAGED_DIR, n);
+                    File realCont = join(TEMP_DIR, c);
+                    try {
+                        BufferedReader rc = new BufferedReader(new FileReader(join(BLOBS_DIR, c)));
+                        BufferedReader rb = new BufferedReader(new FileReader(join(BLOBS_DIR, b)));
+                        BufferedWriter writer = new BufferedWriter(new FileWriter(realCont, true));
+                        writer.write("<<<<<<< HEAD");
+                        String line = rc.readLine();
+                        while (line != null) {
+                            writer.write(line);
+                            line = rc.readLine();
+                        }
+                        writer.write("=======");
+                        line = rb.readLine();
+                        while (line != null) {
+                            writer.write(line);
+                            line = rb.readLine();
+                        }
+                        writer.write(">>>>>>>");
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    String fSha = sha1(readContents(realCont));
+                    writeContents(sFile, fSha);
+                    realCont.renameTo(join(TEMP_DIR, fSha));
                 }
             }
         }
+        commit("Merged [" + branchName + "]" + " into [" + readContentsAsString(HEAD) + "].", branchCommitSha);
+        System.out.println("Encountered a merge conflict.");
     }
 }
