@@ -1,9 +1,30 @@
 package gitlet;
 
-import java.io.*;
-import java.util.*;
+import static gitlet.Utils.join;
+import static gitlet.Utils.plainFilenamesIn;
+import static gitlet.Utils.readContents;
+import static gitlet.Utils.readContentsAsString;
+import static gitlet.Utils.readObject;
+import static gitlet.Utils.restrictedDelete;
+import static gitlet.Utils.serialize;
+import static gitlet.Utils.sha1;
+import static gitlet.Utils.writeContents;
+import static gitlet.Utils.writeObject;
 
-import static gitlet.Utils.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 /** Represents a gitlet repository.
  *  @author Heliannl
@@ -17,13 +38,16 @@ public class Repository {
     public static final File TEMP_DIR = join(GITLET_DIR, "temp");
     public static final File STAGED_DIR = join(GITLET_DIR, "staged");
     public static final File REMOVED_DIR = join(GITLET_DIR, "removed");
+    public static final File UNTRACKED_DIR = join(GITLET_DIR, "untracked");
     public static final File BRANCHES_DIR = join(GITLET_DIR, "branches");
     public static final File HEAD = join(GITLET_DIR, "HEAD");
     public static final File ACTIVE_B = join(GITLET_DIR, "activeB");
+    public static final List<String> IGNORE_FILES = plainFilenamesIn(CWD);
 
     public static void init() {
         if (GITLET_DIR.exists()) {
-            System.out.println("A Gitlet version-control system already exists in the current directory.");
+            System.out.println("A Gitlet version-control system"
+                    + " already exists in the current directory.");
         } else {
             GITLET_DIR.mkdir();
             BLOBS_DIR.mkdir();
@@ -31,6 +55,7 @@ public class Repository {
             TEMP_DIR.mkdir();
             STAGED_DIR.mkdir();
             REMOVED_DIR.mkdir();
+            UNTRACKED_DIR.mkdir();
             BRANCHES_DIR.mkdir();
             Commit initialCommit = new Commit("initial commit", null, new Date(0));
             String commitSha = sha1(serialize(initialCommit));
@@ -82,8 +107,9 @@ public class Repository {
         for (String f : files) {
             String fSha = readContentsAsString(join(STAGED_DIR, f));
             headCommit.addCommit(f, fSha);
-            if (!join(BLOBS_DIR, fSha).exists()) {
-                writeContents(join(BLOBS_DIR, fSha), readContents(join(TEMP_DIR, fSha)));
+            File b = join(BLOBS_DIR, fSha);
+            if (!b.exists()) {
+                writeContents(b, readContents(join(TEMP_DIR, fSha)));
             }
         }
         files = plainFilenamesIn(REMOVED_DIR);
@@ -170,12 +196,13 @@ public class Repository {
         }
     }
 
-    private static void withMergeParent(Commit currCommit, String mergeParSha, String headCommitSha) {
-        if (mergeParSha != null) {
-            System.out.println("Merge: " + mergeParSha.substring(0, 7) + headCommitSha.substring(0, 7));
+    private static void withMergeParent(Commit currC, String mParSha, String hCommitSha) {
+        if (mParSha != null) {
+            System.out.println("Merge: " + mParSha.substring(0, 7)
+                    + " " + hCommitSha.substring(0, 7));
         }
-        System.out.println("Date: " + currCommit.getTimestamp());
-        System.out.println(currCommit.getMessage());
+        System.out.println("Date: " + currC.getTimestamp());
+        System.out.println(currC.getMessage());
         System.out.println();
     }
 
@@ -203,7 +230,9 @@ public class Repository {
     }
 
     public static void status() {
-        if (GITLET_DIR.exists()) {
+        if (!GITLET_DIR.exists()) {
+            System.out.println("Not in an initialized Gitlet directory.");
+        } else {
             System.out.println("=== Branches ===");
             String actBran = readContentsAsString(ACTIVE_B);
             System.out.println("*" + actBran);
@@ -243,8 +272,10 @@ public class Repository {
                 for (Map.Entry<String, String> entry : branchCommit.getFiles().entrySet()) {
                     String fileName = entry.getKey();
                     File f = join(CWD, fileName);
-                    if (f.exists() && !(headCommit.getSha(fileName).equals(sha1(readContents(f))))) {
-                        System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+                    if (f.exists()
+                            && !(headCommit.getSha(fileName).equals(sha1(readContents(f))))) {
+                        System.out.println("There is an untracked file in the way; "
+                                + "delete it, or add and commit it first.");
                         System.exit(0);
                     }
                     writeContents(f, readContents(join(BLOBS_DIR, entry.getValue())));
@@ -306,9 +337,14 @@ public class Repository {
         Commit headCommit = readObject(join(COMMITS_DIR, headCommitSha), Commit.class);
         List<String> files = plainFilenamesIn(CWD);
         for (String file: files) {
+            if (IGNORE_FILES.contains(file)) {
+                continue;
+            }
             File f = join(CWD, file);
-            if (f.exists() && !(headCommit.getSha(file).equals(sha1(readContents(f))))) {
-                System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+            String hSha = headCommit.getSha(file);
+            if (f.exists() && (hSha == null || !(hSha.equals(sha1(readContents(f)))))) {
+                System.out.println("There is an untracked file in the way; "
+                        + "delete it, or add and commit it first.");
                 System.exit(0);
             }
         }
@@ -361,90 +397,103 @@ public class Repository {
         return true;
     }
 
-    public static void merge(String branchName) {
+    private static void mergeConflictedFile(String n, String c, String b) {
+        File sFile = join(STAGED_DIR, n);
+        File realCont = join(TEMP_DIR, c);
+        try {
+            BufferedReader rc = new BufferedReader(new FileReader(join(BLOBS_DIR, c)));
+            BufferedReader rb = new BufferedReader(new FileReader(join(BLOBS_DIR, b)));
+            BufferedWriter writer = new BufferedWriter(new FileWriter(realCont, true));
+            writer.write("<<<<<<< HEAD\n");
+            writer.write("contents of file in current branch\n");
+            String line = rc.readLine();
+            while (line != null) {
+                writer.write(line + "\n");
+                line = rc.readLine();
+            }
+            writer.write("=======\n");
+            writer.write("contents of file in given branch\n");
+            line = rb.readLine();
+            while (line != null) {
+                writer.write(line + "\n");
+                line = rb.readLine();
+            }
+            writer.write(">>>>>>>\n");
+            writer.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        String fSha = sha1(readContents(realCont));
+        writeContents(sFile, fSha);
+        realCont.renameTo(join(TEMP_DIR, fSha));
+    }
+
+    public static void merge(String branchN) {
         if (notEmpty(STAGED_DIR) || notEmpty(REMOVED_DIR)) {
             System.out.println("You have uncommitted changes.");
             System.exit(0);
         }
-        File br = join(BRANCHES_DIR, branchName);
+        File br = join(BRANCHES_DIR, branchN);
         if (!br.exists()) {
             System.out.println("A branch with that name does not exists.");
         }
-        if (readContentsAsString(ACTIVE_B).equals(branchName)) {
+        if (readContentsAsString(ACTIVE_B).equals(branchN)) {
             System.out.println("Cannot merge a branch with itself.");
         }
         untrackedTest();
         String headCommitSha = readContentsAsString(HEAD);
         Commit headCommit = readObject(join(COMMITS_DIR, headCommitSha), Commit.class);
-        String branchCommitSha = readContentsAsString(join(BRANCHES_DIR, branchName));
+        String branchCommitSha = readContentsAsString(join(BRANCHES_DIR, branchN));
         Commit branchCommit = readObject(join(COMMITS_DIR, branchCommitSha), Commit.class);
         String splitCommitSha = findSplitCommitHelper(headCommit, branchCommit);
         if (splitCommitSha.equals(branchCommitSha)) {
             System.out.println("Given branch is an ancestor of the current branch.");
         } else if (splitCommitSha.equals(headCommitSha)) {
-            checkoutBranch(branchName);
+            checkoutBranch(branchN);
             System.out.println("Current branch fast-forward.");
         } else {
             Commit splitCommit = readObject(join(COMMITS_DIR, splitCommitSha), Commit.class);
             Map<String, String> fInHead = headCommit.getFiles();
             Map<String, String> fInBranch = branchCommit.getFiles();
             Map<String, String> fInSplit = splitCommit.getFiles();
-            List<String> fInHeadN = headCommit.getFileNames();
-            List<String> fInBranchN = branchCommit.getFileNames();
-            List<String> fInSplitN = splitCommit.getFileNames();
-            List<String> allNames = receiveUnionList(receiveUnionList(fInHeadN, fInBranchN), fInSplitN);
+            List<String> fInHN = headCommit.getFileNames();
+            List<String> fInBN = branchCommit.getFileNames();
+            List<String> fInSN = splitCommit.getFileNames();
+            List<String> allNames = receiveUnionList(receiveUnionList(fInHN, fInBN), fInSN);
             for (String n : allNames) {
                 String c = fInHead.get(n);
                 String b = fInBranch.get(n);
                 String s = fInSplit.get(n);
-                if (fInSplitN.contains(n) && fInBranchN.contains(n) && fInHeadN.contains(n) && !b.equals(s) && c.equals(s)) {
+                if (fInSN.contains(n) && fInBN.contains(n) && fInHN.contains(n)
+                        && !b.equals(s) && c.equals(s)) {
                     writeContents(join(STAGED_DIR, n), b);
-                } else if (fInSplitN.contains(n) && fInBranchN.contains(n) && fInHeadN.contains(n) && b.equals(s) && !c.equals(s)) {
+                } else if (fInSN.contains(n) && fInBN.contains(n) && fInHN.contains(n)
+                        && b.equals(s) && !c.equals(s)) {
                     continue;
-                } else if (fInSplitN.contains(n) && fInBranchN.contains(n) && fInHeadN.contains(n) && !b.equals(s) && !c.equals(s) && b.equals(c)) {
+                } else if (fInSN.contains(n) && fInBN.contains(n) && fInHN.contains(n)
+                        && !b.equals(s) && !c.equals(s) && b.equals(c)) {
                     continue;
-                } else if (fInSplitN.contains(n) && !fInBranchN.contains(n) && !fInHeadN.contains(n)) {
+                } else if (fInSN.contains(n) && !fInBN.contains(n) && !fInHN.contains(n)) {
                     continue;
-                } else if (!fInSplitN.contains(n) && !fInBranchN.contains(n) && fInHeadN.contains(n)) {
+                } else if (!fInSN.contains(n) && !fInBN.contains(n) && fInHN.contains(n)) {
                     continue;
-                } else if (!fInSplitN.contains(n) && fInBranchN.contains(n) && !fInHeadN.contains(n)) {
+                } else if (!fInSN.contains(n) && fInBN.contains(n) && !fInHN.contains(n)) {
                     writeContents(join(STAGED_DIR, n), b);
-                } else if (fInSplitN.contains(n) && !fInBranchN.contains(n) && fInHeadN.contains(n) && c.equals(s)) {
+                } else if (fInSN.contains(n) && !fInBN.contains(n) && fInHN.contains(n)
+                        && c.equals(s)) {
                     writeContents(join(REMOVED_DIR, n), c); //&& untracked
-                } else if (fInSplitN.contains(n) && fInBranchN.contains(n) && !fInHeadN.contains(n) && b.equals(s)) {
+                } else if (fInSN.contains(n) && fInBN.contains(n) && !fInHN.contains(n)
+                        && b.equals(s)) {
                     continue;
                 } else {
-                    File sFile = join(STAGED_DIR, n);
-                    File realCont = join(TEMP_DIR, c);
-                    try {
-                        BufferedReader rc = new BufferedReader(new FileReader(join(BLOBS_DIR, c)));
-                        BufferedReader rb = new BufferedReader(new FileReader(join(BLOBS_DIR, b)));
-                        BufferedWriter writer = new BufferedWriter(new FileWriter(realCont, true));
-                        writer.write("<<<<<<< HEAD");
-                        String line = rc.readLine();
-                        while (line != null) {
-                            writer.write(line);
-                            line = rc.readLine();
-                        }
-                        writer.write("=======");
-                        line = rb.readLine();
-                        while (line != null) {
-                            writer.write(line);
-                            line = rb.readLine();
-                        }
-                        writer.write(">>>>>>>");
-                    } catch (FileNotFoundException e) {
-                        e.printStackTrace();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    String fSha = sha1(readContents(realCont));
-                    writeContents(sFile, fSha);
-                    realCont.renameTo(join(TEMP_DIR, fSha));
+                    mergeConflictedFile(n, c, b);
                 }
             }
         }
-        commit("Merged [" + branchName + "]" + " into [" + readContentsAsString(HEAD) + "].", branchCommitSha);
+        commit("Merged [" + branchN + "]"
+                + " into [" + readContentsAsString(ACTIVE_B) + "].");
         System.out.println("Encountered a merge conflict.");
     }
 }

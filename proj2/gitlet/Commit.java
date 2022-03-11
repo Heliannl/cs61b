@@ -16,9 +16,9 @@ public class Commit implements Serializable {
     private String message;
     private Map<String, String> files;
 
-    private String utcDateFormat(Date timestamp) {
+    private String utcDateFormat(Date t) {
         String patternStr = "EEE MMM d HH:mm:ss YYYY Z";
-        return new SimpleDateFormat(patternStr, Locale.US).format(timestamp);
+        return new SimpleDateFormat(patternStr, Locale.US).format(t);
     }
 
     public Commit(String message, String parent, Date timestamp) {
@@ -57,21 +57,23 @@ public class Commit implements Serializable {
         return names;
     }
 
-    public void update(String parent, String message, Date timestamp) {
-        this.parent = parent;
-        this.timestamp = utcDateFormat(timestamp);
-        this.message = message;
+    public void update(String p, String m, Date t) {
+        this.parent = p;
+        this.timestamp = utcDateFormat(t);
+        this.message = m;
     }
 
-    public void addMergeParent(String mergeParent) {
-        this.mergeParent = mergeParent;
+    public void addMergeParent(String mp) {
+        this.mergeParent = mp;
     }
 
     public void addCommit(String fileName, String sha1) {
         files.put(fileName, sha1);
     }
 
-    public void removeCommit(String fileName, String sha1) { files.remove(fileName, sha1); }
+    public void removeCommit(String fileName, String sha1) {
+        files.remove(fileName, sha1);
+    }
 
     public String getSha(String fileName) {
         if (files.containsKey(fileName)) {
