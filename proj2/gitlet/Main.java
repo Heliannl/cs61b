@@ -54,7 +54,11 @@ public class Main {
                 if (args.length == 2) {
                     Repository.checkoutBranch(args[1]);
                 } else if (args.length == 3) {
-                    Repository.checkoutFile(args[2]);
+                    if (!args[1].equals("--")) {
+                        System.out.println("Incorrect operands.");
+                    } else {
+                        Repository.checkoutFile(args[2]);
+                    }
                 } else {
                     Repository.checkout(args[1], args[3]);
                 }

@@ -19,6 +19,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -42,7 +43,8 @@ public class Repository {
     public static final File BRANCHES_DIR = join(GITLET_DIR, "branches");
     public static final File HEAD = join(GITLET_DIR, "HEAD");
     public static final File ACTIVE_B = join(GITLET_DIR, "activeB");
-    public static final List<String> IGNORE_FILES = plainFilenamesIn(CWD);
+    public static final List<String> IGNORE_FILES =
+            Arrays.asList("Makefile", "gitlet-design.md", "pom.xml");
 
     public static void init() {
         if (GITLET_DIR.exists()) {
@@ -80,6 +82,10 @@ public class Repository {
             if (temp != null && temp.equals(currFileSha)) {
                 if (sFile.exists() && sFile.isFile()) {
                     sFile.delete();
+                }
+                File rFile = join(REMOVED_DIR, fileName);
+                if (rFile.exists() && rFile.isFile()) {
+                    rFile.delete();
                 }
             } else {
                 writeContents(sFile, currFileSha);
@@ -261,30 +267,32 @@ public class Repository {
         File b = join(BRANCHES_DIR, branchName);
         if (!b.exists()) {
             System.out.println("No such branch exists.");
-        } else {
-            if (readContentsAsString(ACTIVE_B).equals(branchName)) {
-                System.out.println("No need to checkout the current branch.");
-            } else {
-                String headCommitSha = readContentsAsString(HEAD);
-                Commit headCommit = readObject(join(COMMITS_DIR, headCommitSha), Commit.class);
-                String branchCommitSha = readContentsAsString(b);
-                Commit branchCommit = readObject(join(COMMITS_DIR, branchCommitSha), Commit.class);
-                for (Map.Entry<String, String> entry : branchCommit.getFiles().entrySet()) {
-                    String fileName = entry.getKey();
-                    File f = join(CWD, fileName);
-                    if (f.exists()
-                            && !(headCommit.getSha(fileName).equals(sha1(readContents(f))))) {
-                        System.out.println("There is an untracked file in the way; "
-                                + "delete it, or add and commit it first.");
-                        System.exit(0);
-                    }
-                    writeContents(f, readContents(join(BLOBS_DIR, entry.getValue())));
-                }
-                clearDir(STAGED_DIR);
-                writeContents(ACTIVE_B, branchName);
-                writeContents(HEAD, branchCommitSha);
+            System.exit(0);
+        }
+        if (readContentsAsString(ACTIVE_B).equals(branchName)) {
+            System.out.println("No need to checkout the current branch.");
+            System.exit(0);
+        }
+        untrackedTest();
+        String headCommitSha = readContentsAsString(HEAD);
+        Commit headCommit = readObject(join(COMMITS_DIR, headCommitSha), Commit.class);
+        String branchCommitSha = readContentsAsString(b);
+        Commit branchCommit = readObject(join(COMMITS_DIR, branchCommitSha), Commit.class);
+        Map<String, String> fInHead = headCommit.getFiles();
+        Map<String, String> fInBranch = branchCommit.getFiles();
+        List<String> fInHN = headCommit.getFileNames();
+        List<String> fInBN = branchCommit.getFileNames();
+        for (String file : fInBN) {
+            writeContents(join(CWD, file), readContents(join(BLOBS_DIR, fInBranch.get(file))));
+        }
+        for (String file : fInHN) {
+            if (!fInBN.contains(file)) {
+                join(CWD, file).delete();
             }
         }
+        clearDir(STAGED_DIR);
+        writeContents(ACTIVE_B, branchName);
+        writeContents(HEAD, branchCommitSha);
     }
 
     private static void checkoutHelper(String commitSha, String fileName) {
