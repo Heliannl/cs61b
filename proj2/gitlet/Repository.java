@@ -485,7 +485,8 @@ public class Repository {
     }
 
     private static boolean isEmpty(File dir) {
-        if (dir.length() == 0) {
+        List<String> names = plainFilenamesIn(dir);
+        if (names.size() == 0) {
             return true;
         }
         return false;
@@ -494,21 +495,11 @@ public class Repository {
     private static void mergeConflictedFile(String n, String c, String b) {
         File realCont = join(CWD, n);
         try {
-            BufferedReader rc = new BufferedReader(new FileReader(join(BLOBS_DIR, c)));
-            BufferedReader rb = new BufferedReader(new FileReader(join(BLOBS_DIR, b)));
             BufferedWriter writer = new BufferedWriter(new FileWriter(realCont));
             writer.write("<<<<<<< HEAD\n");
-            String line = rc.readLine();
-            while (line != null) {
-                writer.write(line + "\n");
-                line = rc.readLine();
-            }
+            writeFrom(c, writer);
             writer.write("=======\n");
-            line = rb.readLine();
-            while (line != null) {
-                writer.write(line + "\n");
-                line = rb.readLine();
-            }
+            writeFrom(b, writer);
             writer.write(">>>>>>>\n");
             writer.close();
         } catch (FileNotFoundException e) {
@@ -519,18 +510,30 @@ public class Repository {
         add(n);
     }
 
+    private static void writeFrom(String b, BufferedWriter writer) throws IOException {
+        if (b != null) {
+            BufferedReader rb = new BufferedReader(new FileReader(join(BLOBS_DIR, b)));
+            String line = rb.readLine();
+            while (line != null) {
+                writer.write(line + "\n");
+                line = rb.readLine();
+            }
+        }
+    }
+
     public static void merge(String branchN) {
         boolean flag = false;
-        if (isEmpty(STAGED_DIR) && isEmpty(REMOVED_DIR)) {
+        if (!isEmpty(STAGED_DIR) || !isEmpty(REMOVED_DIR)) {
             System.out.println("You have uncommitted changes.");
             System.exit(0);
         }
-        File br = join(BRANCHES_DIR, branchN);
-        if (!br.exists()) {
+        if (!join(BRANCHES_DIR, branchN).exists()) {
             System.out.println("A branch with that name does not exists.");
+            System.exit(0);
         }
         if (readContentsAsString(ACTIVE_B).equals(branchN)) {
             System.out.println("Cannot merge a branch with itself.");
+            System.exit(0);
         }
         untrackedTest();
         String headCommitSha = readContentsAsString(HEAD);
@@ -540,9 +543,11 @@ public class Repository {
         String splitCommitSha = findSplitCommitHelper(headCommit, branchCommit);
         if (splitCommitSha.equals(branchCommitSha)) {
             System.out.println("Given branch is an ancestor of the current branch.");
+            System.exit(0);
         } else if (splitCommitSha.equals(headCommitSha)) {
             checkoutBranch(branchN);
             System.out.println("Current branch fast-forward.");
+            System.exit(0);
         } else {
             Commit splitCommit = readObject(join(COMMITS_DIR, splitCommitSha), Commit.class);
             Map<String, String> fInHead = headCommit.getFiles();
@@ -565,7 +570,9 @@ public class Repository {
                         || (fInSN.contains(n) && fInBN.contains(n) && fInHN.contains(n)
                         && !b.equals(s) && !c.equals(s) && b.equals(c))
                         || ((fInSN.contains(n) && !fInBN.contains(n) && !fInHN.contains(n))
-                        || (!fInSN.contains(n) && !fInBN.contains(n) && fInHN.contains(n)))) {
+                        || (!fInSN.contains(n) && !fInBN.contains(n) && fInHN.contains(n)))
+                        || (fInSN.contains(n) && fInBN.contains(n) && !fInHN.contains(n)
+                        && b.equals(s))) {
                     continue;
                 } else if (!fInSN.contains(n) && fInBN.contains(n) && !fInHN.contains(n)) {
                     checkout(branchCommitSha, n);
@@ -574,9 +581,6 @@ public class Repository {
                         && c.equals(s)) {
                     writeContents(join(REMOVED_DIR, n), c);
                     join(CWD, n).delete();
-                } else if (fInSN.contains(n) && fInBN.contains(n) && !fInHN.contains(n)
-                        && b.equals(s)) {
-                    continue;
                 } else if (fInSN.contains(n) && fInBN.contains(n) && fInHN.contains(n)
                     && !b.equals(s) && !c.equals(s) && !b.equals(c)) {
                     mergeConflictedFile(n, c, b);
@@ -592,8 +596,7 @@ public class Repository {
                 }
             }
         }
-        commit("Merged " + branchN + " into "
-                + readContentsAsString(ACTIVE_B) + ".");
+        commit("Merged " + branchN + " into " + readContentsAsString(ACTIVE_B) + ".");
         if (flag) {
             System.out.println("Encountered a merge conflict.");
         }
