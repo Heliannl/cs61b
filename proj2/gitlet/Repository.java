@@ -452,8 +452,8 @@ public class Repository {
         untrackedTest();
     }
 
-    private static Set<String> commitParentChain(Commit c) {
-        Set<String> parCommitId = new HashSet<>();
+    private static List<String> commitParentChain(Commit c) {
+        List<String> parCommitId = new ArrayList<>();
         Commit temp = c;
         String id = c.getParent();
         while (id != null) {
@@ -471,7 +471,7 @@ public class Repository {
     }
 
     private static String findSplitCommitHelper(Commit head, Commit other) {
-        Set<String> headParId = commitParentChain(head);
+        List<String> headParId = commitParentChain(head);
         String id = other.getParent();
         while (id != null) {
             if (headParId.contains(id)) {
