@@ -176,6 +176,10 @@ public class Repository {
     }
 
     public static void log() {
+        if (!HEAD.exists()) {
+            System.out.println("Not in an initialized Gitlet directory.");
+            System.exit(0);
+        }
         String headCommitSha = readContentsAsString(HEAD);
         Commit currCommit = readObject(join(COMMITS_DIR, headCommitSha), Commit.class);
         while (true) {
@@ -237,7 +241,7 @@ public class Repository {
     }
 
     @SuppressWarnings("unchecked")
-    public static List<String> listRem(List<String> listA, List<String> listB){
+    public static List<String> listRem(List<String> listA, List<String> listB) {
         HashSet hs1 = new HashSet(listA);
         HashSet hs2 = new HashSet(listB);
         hs1.removeAll(hs2);
@@ -489,21 +493,18 @@ public class Repository {
     }
 
     private static void mergeConflictedFile(String n, String c, String b) {
-        File sFile = join(STAGED_DIR, n);
-        File realCont = join(TEMP_DIR, c);
+        File realCont = join(CWD, n);
         try {
             BufferedReader rc = new BufferedReader(new FileReader(join(BLOBS_DIR, c)));
             BufferedReader rb = new BufferedReader(new FileReader(join(BLOBS_DIR, b)));
-            BufferedWriter writer = new BufferedWriter(new FileWriter(realCont, true));
+            BufferedWriter writer = new BufferedWriter(new FileWriter(realCont));
             writer.write("<<<<<<< HEAD\n");
-            writer.write("contents of file in current branch\n");
             String line = rc.readLine();
             while (line != null) {
                 writer.write(line + "\n");
                 line = rc.readLine();
             }
             writer.write("=======\n");
-            writer.write("contents of file in given branch\n");
             line = rb.readLine();
             while (line != null) {
                 writer.write(line + "\n");
@@ -516,12 +517,11 @@ public class Repository {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        String fSha = sha1(readContents(realCont));
-        writeContents(sFile, fSha);
-        realCont.renameTo(join(TEMP_DIR, fSha));
+        add(n);
     }
 
     public static void merge(String branchN) {
+        boolean flag = false;
         if (notEmpty(STAGED_DIR) || notEmpty(REMOVED_DIR)) {
             System.out.println("You have uncommitted changes.");
             System.exit(0);
@@ -559,32 +559,44 @@ public class Repository {
                 String s = fInSplit.get(n);
                 if (fInSN.contains(n) && fInBN.contains(n) && fInHN.contains(n)
                         && !b.equals(s) && c.equals(s)) {
+                    checkout(branchCommitSha, n);
                     writeContents(join(STAGED_DIR, n), b);
-                } else if (fInSN.contains(n) && fInBN.contains(n) && fInHN.contains(n)
-                        && b.equals(s) && !c.equals(s)) {
-                    continue;
-                } else if (fInSN.contains(n) && fInBN.contains(n) && fInHN.contains(n)
-                        && !b.equals(s) && !c.equals(s) && b.equals(c)) {
-                    continue;
-                } else if (fInSN.contains(n) && !fInBN.contains(n) && !fInHN.contains(n)) {
-                    continue;
-                } else if (!fInSN.contains(n) && !fInBN.contains(n) && fInHN.contains(n)) {
+                } else if ((fInSN.contains(n) && fInBN.contains(n) && fInHN.contains(n)
+                        && b.equals(s) && !c.equals(s))
+                        || (fInSN.contains(n) && fInBN.contains(n) && fInHN.contains(n)
+                        && !b.equals(s) && !c.equals(s) && b.equals(c))
+                        || ((fInSN.contains(n) && !fInBN.contains(n) && !fInHN.contains(n))
+                        || (!fInSN.contains(n) && !fInBN.contains(n) && fInHN.contains(n)))) {
                     continue;
                 } else if (!fInSN.contains(n) && fInBN.contains(n) && !fInHN.contains(n)) {
+                    checkout(branchCommitSha, n);
                     writeContents(join(STAGED_DIR, n), b);
                 } else if (fInSN.contains(n) && !fInBN.contains(n) && fInHN.contains(n)
                         && c.equals(s)) {
-                    writeContents(join(REMOVED_DIR, n), c); //&& untracked
+                    writeContents(join(REMOVED_DIR, n), c);
+                    join(CWD, n).delete();
                 } else if (fInSN.contains(n) && fInBN.contains(n) && !fInHN.contains(n)
                         && b.equals(s)) {
                     continue;
-                } else {
+                } else if (fInSN.contains(n) && fInBN.contains(n) && fInHN.contains(n)
+                    && !b.equals(s) && !c.equals(s) && !b.equals(c)) {
                     mergeConflictedFile(n, c, b);
+                    flag = true;
+                } else if ((fInSN.contains(n) && fInBN.contains(n) && !fInHN.contains(n)
+                        && !b.equals(s))
+                        || (fInSN.contains(n) && !fInBN.contains(n) && fInHN.contains(n)
+                        && !c.equals(s))
+                        || (!fInSN.contains(n) && fInBN.contains(n) && fInHN.contains(n)
+                        && !b.equals(c))) {
+                    mergeConflictedFile(n, c, b);
+                    flag = true;
                 }
             }
         }
-        commit("Merged [" + branchN + "]"
-                + " into [" + readContentsAsString(ACTIVE_B) + "].");
-        System.out.println("Encountered a merge conflict.");
+        commit("Merged " + branchN + " into "
+                + readContentsAsString(ACTIVE_B) + ".");
+        if (flag) {
+            System.out.println("Encountered a merge conflict.");
+        }
     }
 }

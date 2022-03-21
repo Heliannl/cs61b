@@ -16,7 +16,8 @@ public class Main {
      */
 
     public static void main(String[] args) {
-        if (args.length == 0) {
+        int argsLength = args.length;
+        if (argsLength == 0) {
             System.out.println("Please enter a command.");
             System.exit(0);
         }
@@ -29,7 +30,7 @@ public class Main {
                 Repository.add(args[1]);
                 break;
             case "commit":
-                if (args.length == 1 || args[1] == null) {
+                if (argsLength == 1) {
                     System.out.println("Please enter a commit message.");
                 } else {
                     Repository.commit(args[1]);
@@ -51,16 +52,19 @@ public class Main {
                 Repository.status();
                 break;
             case "checkout":
-                if (args.length == 2) {
+                if (argsLength == 2) {
                     Repository.checkoutBranch(args[1]);
-                } else if (args.length == 3) {
+                } else if (argsLength == 3) {
                     if (!args[1].equals("--")) {
                         System.out.println("Incorrect operands.");
                     } else {
                         Repository.checkoutFile(args[2]);
                     }
-                } else {
-                    Repository.checkout(args[1], args[3]);
+                } else if (argsLength == 4){
+                    if (!args[2].equals("--"))
+                        System.out.println("Incorrect operands.");
+                    else
+                        Repository.checkout(args[1], args[3]);
                 }
                 break;
             case "branch":
