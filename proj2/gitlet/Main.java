@@ -22,7 +22,7 @@ public class Main {
             System.exit(0);
         }
         String firstArg = args[0];
-        switch(firstArg) {
+        switch (firstArg) {
             case "init":
                 Repository.init();
                 break;
@@ -60,11 +60,12 @@ public class Main {
                     } else {
                         Repository.checkoutFile(args[2]);
                     }
-                } else if (argsLength == 4){
-                    if (!args[2].equals("--"))
+                } else if (argsLength == 4) {
+                    if (!args[2].equals("--")) {
                         System.out.println("Incorrect operands.");
-                    else
+                    } else {
                         Repository.checkout(args[1], args[3]);
+                    }
                 }
                 break;
             case "branch":

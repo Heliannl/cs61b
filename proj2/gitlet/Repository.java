@@ -450,7 +450,6 @@ public class Repository {
             System.out.println("No commit with that id exists.");
         }
         untrackedTest();
-
     }
 
     private static List<String> commitParentChain(Commit c) {
@@ -485,11 +484,11 @@ public class Repository {
         return resultList;
     }
 
-    private static boolean notEmpty(File dir) {
+    private static boolean isEmpty(File dir) {
         if (dir.length() == 0) {
-            return false;
+            return true;
         }
-        return true;
+        return false;
     }
 
     private static void mergeConflictedFile(String n, String c, String b) {
@@ -522,7 +521,7 @@ public class Repository {
 
     public static void merge(String branchN) {
         boolean flag = false;
-        if (notEmpty(STAGED_DIR) || notEmpty(REMOVED_DIR)) {
+        if (isEmpty(STAGED_DIR) && isEmpty(REMOVED_DIR)) {
             System.out.println("You have uncommitted changes.");
             System.exit(0);
         }
