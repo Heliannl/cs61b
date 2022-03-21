@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -235,6 +236,86 @@ public class Repository {
         }
     }
 
+    @SuppressWarnings("unchecked")
+    public static List<String> listRem(List<String> listA, List<String> listB){
+        HashSet hs1 = new HashSet(listA);
+        HashSet hs2 = new HashSet(listB);
+        hs1.removeAll(hs2);
+        List<String> listC = new ArrayList<>();
+        listC.addAll(hs1);
+        return listC;
+    }
+
+    private static boolean isStaged(String n, String fileSha) {
+        File a = join(STAGED_DIR, n);
+        if (a.exists()) {
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean isTracked(String n, Commit headCommit, String fileSha) {
+        String hSha = headCommit.getSha(n);
+        if (hSha != null) {
+            return true;
+        }
+        return false;
+    }
+
+    private static void untrackedFiles() {
+        String headCommitSha = readContentsAsString(HEAD);
+        Commit headCommit = readObject(join(COMMITS_DIR, headCommitSha), Commit.class);
+        List<String> names = listRem(plainFilenamesIn(CWD), IGNORE_FILES);
+        Collections.sort(names);
+        for (String n : names) {
+            String fileSha = sha1(readContents(join(CWD, n)));
+            if (!isStaged(n, fileSha) && !isTracked(n, headCommit, fileSha)) {
+                System.out.println(n);
+            }
+        }
+    }
+
+    private static void modifiedFile(String n, String fileSha, Commit headCommit) {
+        File a = join(STAGED_DIR, n);
+        if (a.exists() && !fileSha.equals(readContentsAsString(a))) {
+            System.out.println(n + "(modified)");
+        }
+        String hSha = headCommit.getSha(n);
+        if (!a.exists() && hSha != null && !hSha.equals(fileSha)) {
+            System.out.println(n + "(modified)");
+        }
+    }
+
+    private static void deletedFile(Commit headCommit) {
+        List<String> names = plainFilenamesIn(STAGED_DIR);
+        Collections.sort(names);
+        for (String n : names) {
+            if (!join(CWD, n).exists()) {
+                System.out.println(n + "(deleted)");
+            }
+        }
+        names = headCommit.getFileNames();
+        Collections.sort(names);
+        for (String n : names) {
+            if (!join(REMOVED_DIR, n).exists() && !join(CWD, n).exists()) {
+                System.out.println(n + "(deleted)");
+            }
+        }
+    }
+
+
+    private static void modificationFiles() {
+        String headCommitSha = readContentsAsString(HEAD);
+        Commit headCommit = readObject(join(COMMITS_DIR, headCommitSha), Commit.class);
+        List<String> names = listRem(plainFilenamesIn(CWD), IGNORE_FILES);
+        Collections.sort(names);
+        for (String n : names) {
+            String fileSha = sha1(readContents(join(CWD, n)));
+            modifiedFile(n, fileSha, headCommit);
+        }
+        deletedFile(headCommit);
+    }
+
     public static void status() {
         if (!GITLET_DIR.exists()) {
             System.out.println("Not in an initialized Gitlet directory.");
@@ -257,8 +338,10 @@ public class Repository {
             printFilenamesIn(join(REMOVED_DIR));
             System.out.println();
             System.out.println("=== Modifications Not Staged For Commit ===");
+            modificationFiles();
             System.out.println();
             System.out.println("=== Untracked Files ===");
+            untrackedFiles();
             System.out.println();
         }
     }
