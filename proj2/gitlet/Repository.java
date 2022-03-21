@@ -452,9 +452,16 @@ public class Repository {
         untrackedTest();
     }
 
-    private static List<String> commitParentChain(Commit c) {
-        List<String> parCommitId = new ArrayList<>();
+    private static Set<String> commitParentChain(Commit c) {
+        Set<String> parCommitId = new HashSet<>();
+        Commit temp = c;
         String id = c.getParent();
+        while (id != null) {
+            parCommitId.add(id);
+            c = readObject(join(COMMITS_DIR, id), Commit.class);
+            id = c.getParent();
+        }
+        id = temp.getMergeParent();
         while (id != null) {
             parCommitId.add(id);
             c = readObject(join(COMMITS_DIR, id), Commit.class);
@@ -464,7 +471,7 @@ public class Repository {
     }
 
     private static String findSplitCommitHelper(Commit head, Commit other) {
-        List<String> headParId = commitParentChain(head);
+        Set<String> headParId = commitParentChain(head);
         String id = other.getParent();
         while (id != null) {
             if (headParId.contains(id)) {
